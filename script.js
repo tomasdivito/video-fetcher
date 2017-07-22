@@ -19,15 +19,28 @@ let fetchVideo = function(videoID, language) {
   return promise;
 };
 
+let generateJsonWithLines = function (data) {
+  data.forEach(function (d) {
+    d.json.transcript.text.forEach(function(l) {
+      jsonSubtitles.push({
+        video: d.video,
+        text: l.__text,
+        time: Number(l._start),
+      });
+    })
+  });
+};
+
 let transformData = function (...data) {
   data.forEach(function (d) {
     d.json = x2js.xml_str2json(d.xml);
   });
 
   console.log(data);
+  generateJsonWithLines(data);
 };
 
-let fetchAllVideos = function () {
+let fetchAllVideos = () => {
   $(".status")[0].innerHTML = "";
   $(".message")[0].innerHTML = "";
   let channel = $("#channelID").val();
