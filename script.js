@@ -70,7 +70,7 @@ let fetchAllVideos = () => {
       let totalCount = 0;
 
       let f = function (token) {
-        requestUrl = "https://www.googleapis.com/youtube/v3/search?pageToken=:page_token&order=date&part=snippet&channelId=:channel_id&maxResults=3&key=:api_key"
+        requestUrl = "https://www.googleapis.com/youtube/v3/search?pageToken=:page_token&order=date&part=snippet&channelId=:channel_id&maxResults=50&key=:api_key"
           .replace(":channel_id", channel).replace(":api_key", key).replace(":page_token", token);
 
         $.get(requestUrl, {}, function (data) {
@@ -85,7 +85,7 @@ let fetchAllVideos = () => {
           $(".status")[0].innerHTML = "progress: " + Math.ceil((totalCount * 100) / totalResults) + "%" 
             + " (" + totalCount + "/" + totalResults + ")";
 
-          if (totalCount < 3) {
+          if (totalCount <= totalResults && pageToken) {
             f(pageToken);
           } else {
             if (totalCount < totalResults) $(".message")[0].innerHTML = "Done... but not all videos fetched :(";
