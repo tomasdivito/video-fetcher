@@ -1,16 +1,30 @@
 let x2js = new X2JS();
 
 let jsonSubtitles = [];
+let promises = [];
 
 let fetchVideo = function(videoID, language) {
-  return $.get("http://video.google.com/timedtext?lang=:language&v=:videoid"
+  let promise = $.Deferred();
+  $.get("http://video.google.com/timedtext?lang=:language&v=:videoid"
     .replace(":language", language).replace(":videoid", videoID), 
-    {}, function (data) {
-        // Success. Transform the xml to json.
-        let json = x2js.xml_str2json(data);
-        jsonSubtitles.push(json);
-        console.log(jsonSubtitles);
-      }, "text")
+    {}, function (data) { 
+      let xml = data;
+      data = {
+        xml: xml,
+        video: videoID,
+      }
+      promise.resolve(data) 
+    }, "text");
+  
+  return promise;
+};
+
+let transformData = function (...data) {
+  data.forEach(function (d) {
+    d.json = x2js.xml_str2json(d.xml);
+  });
+
+  console.log(data);
 };
 
 let fetchAllVideos = function () {
@@ -45,17 +59,21 @@ let fetchAllVideos = function () {
           $(".status")[0].innerHTML = "progress: " + Math.ceil((totalCount * 100) / totalResults) + "%" 
             + " (" + totalCount + "/" + totalResults + ")";
 
-          if (totalCount < totalResults && pageToken) {
+          if (totalCount < totalResults || !pageToken) {
             f(pageToken);
           } else {
-            if (totalCount < totalResults) $(".message")[0].innerHTML = "finished... although not completely";
+            if (totalCount < totalResults) $(".message")[0].innerHTML = "finished... although not completely. GETTING SUBTITLES";
 
             // Gets the subtitles for every video that we received;
             videos.forEach(function (pack) {
               pack.forEach(function (video) {
-                fetchVideo(video, "en");
+                if (video) {
+                  promises.push(fetchVideo(video, "en"));
+                }
               })
             });
+
+            $.when(...promises).done(transformData);
           }
         });
       }
