@@ -20,15 +20,31 @@ let fetchVideo = function(videoID, language) {
 };
 
 let generateJsonWithLines = function (data) {
+  $(".message")[0].innerHTML = "Generating JSON. Downloading when ready.";
   data.forEach(function (d) {
-    d.json.transcript.text.forEach(function(l) {
-      jsonSubtitles.push({
-        video: d.video,
-        text: l.__text,
-        time: Number(l._start),
+    if (d.json) {
+      d.json.transcript.text.forEach(function(l) {
+        jsonSubtitles.push({
+          video: d.video,
+          text: l.__text,
+          time: Number(l._start),
+        });
       });
-    })
+    }
   });
+
+  console.log(jsonSubtitles);
+  // Set the download button
+  var data = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(jsonSubtitles));
+  var a = document.createElement('a');
+  a.href = "data:" + data;
+  a.className += "btn btn-info";
+  a.innerHTML = "download JSON";
+  a.download = "lines.json";
+
+  var container = document.getElementById("download");
+  container.appendChild(a);
+  $(".message")[0].innerHTML = "Download file now.";
 };
 
 let transformData = function (...data) {
@@ -36,7 +52,6 @@ let transformData = function (...data) {
     d.json = x2js.xml_str2json(d.xml);
   });
 
-  console.log(data);
   generateJsonWithLines(data);
 };
 
@@ -55,16 +70,14 @@ let fetchAllVideos = () => {
       let totalCount = 0;
 
       let f = function (token) {
-        requestUrl = "https://www.googleapis.com/youtube/v3/search?pageToken=:page_token&order=date&part=snippet&channelId=:channel_id&maxResults=50&key=:api_key"
+        requestUrl = "https://www.googleapis.com/youtube/v3/search?pageToken=:page_token&order=date&part=snippet&channelId=:channel_id&maxResults=3&key=:api_key"
           .replace(":channel_id", channel).replace(":api_key", key).replace(":page_token", token);
 
         $.get(requestUrl, {}, function (data) {
-          console.log(data);
           pageToken = data.nextPageToken;
           videos.push(data.items.map(function (video) {
             return video.id.videoId;
           }));
-          console.log(videos);
           totalResults = data.pageInfo.totalResults;
           totalCount += data.items.length;
 
@@ -72,10 +85,10 @@ let fetchAllVideos = () => {
           $(".status")[0].innerHTML = "progress: " + Math.ceil((totalCount * 100) / totalResults) + "%" 
             + " (" + totalCount + "/" + totalResults + ")";
 
-          if (totalCount < totalResults || !pageToken) {
+          if (totalCount < 3) {
             f(pageToken);
           } else {
-            if (totalCount < totalResults) $(".message")[0].innerHTML = "finished... although not completely. GETTING SUBTITLES";
+            if (totalCount < totalResults) $(".message")[0].innerHTML = "Done... but not all videos fetched :(";
 
             // Gets the subtitles for every video that we received;
             videos.forEach(function (pack) {
