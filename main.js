@@ -1,4 +1,5 @@
 let x2js = new X2JS();
+let zip = new JSZip();
 
 let jsonSubtitles = [];
 let promises = [];
@@ -32,19 +33,19 @@ let generateJsonWithLines = function (data) {
       });
     }
   });
-
-  console.log(jsonSubtitles);
-  // Set the download button
-  var data = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(jsonSubtitles));
-  var a = document.createElement('a');
-  a.href = "data:" + data;
-  a.className += "btn btn-info";
-  a.innerHTML = "download JSON";
+  
+  var data = JSON.stringify(jsonSubtitles);
+  let binaryData = [];
+  binaryData.push(data);
+  let url = window.URL.createObjectURL(new Blob(binaryData, {type: "application/zip"}));
+  console.log(url);
+  let a = document.createElement("a");
+  a.href = url;
   a.download = "lines.json";
-
-  var container = document.getElementById("download");
+  let container = document.getElementById("download");
   container.appendChild(a);
-  $(".message")[0].innerHTML = "Download file now.";
+  a.click();
+  a.remove();
 };
 
 let transformData = function (...data) {
